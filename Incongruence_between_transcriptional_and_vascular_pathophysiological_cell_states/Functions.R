@@ -102,18 +102,20 @@ Violin_plot_stacked <- function(seurat.object, genes, gene.names, cols, labels, 
   
   p27}
 
-UMAP_Conditions_Global <- function(seurat.object, ncond, labels, cols){
+###########################################################################################
+
+UMAP_Conditions_Global <- function(seurat.object, ncond, labels, cols, clustering="FigClustering"){
   
   require(Seurat)
   require(ggplot2)
   require(patchwork)
   
-  p1 <- DimPlot(Liver, cols = cols, pt.size = 1.2, split.by = "Condition", group.by = "FigClustering", combine = T)
+  p1 <- DimPlot(seurat.object, cols = cols, pt.size = 1.2, split.by = "Condition", group.by = clustering, combine = T)
   
   p21 <- p1+facet_grid(~Condition, labeller = as_labeller(labels, default = label_parsed))+
     theme(strip.text.x = element_text(size = 24), plot.title = element_blank())+NoLegend()+xlab("UMAP_1")+ylab("UMAP_2")
   
-  p22 <- DimPlot(Liver, cols = cols, group.by = "FigClustering", pt.size = 1.2)+theme(legend.text = element_text(size = 14), axis.title.x = element_blank(), axis.line.y = element_blank(), axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank())
+  p22 <- DimPlot(seurat.object, cols = cols, group.by = clustering, pt.size = 1.2)+theme(legend.text = element_text(size = 14), axis.title.x = element_blank(), axis.line.y = element_blank(), axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank())
   
   p23 <- list(p21, p22)
   
@@ -122,6 +124,7 @@ UMAP_Conditions_Global <- function(seurat.object, ncond, labels, cols){
   p24 <- Reduce( `+`,  p23)+patchwork::plot_layout(design = design)
   
   p24}
+
 
 ##########################################################################
 
