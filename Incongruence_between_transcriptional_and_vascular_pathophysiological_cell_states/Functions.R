@@ -222,6 +222,116 @@ GSEA_loop_HallMark_GS <- function(seurat.object, condition, species){
 
 ##########################################################################
 
+GSEA_loop_GOBP_GS <- function(seurat.object, condition, species){
+  
+  require(fgsea)
+  require(presto)
+  require(openxlsx)
+  require(msigdbr)
+  require(rlist)
+  require(dplyr)
+  require(tibble)
+  require(rlist)
+  
+  clusters_text <- gsub('\\[', '\\(',
+                        gsub('\\]', '\\)', 
+                             gsub('\\/', '\\_', condition)))
+  
+  if(!dir.exists("Tables/")){
+    dir.create("Tables/")
+  }else{
+    
+  }
+  
+  m_gene_sets = msigdbr(species = species, subcategory = "GO:BP")
+  
+  fgsea_sets<- m_gene_sets %>% split(x = .$gene_symbol, f = .$gs_name) %>% list.filter("Type" > 50)
+  
+  condition_text <- c("Ctlv")
+  
+  mywilcoxauc_DEG <- vector('list', length(condition))
+  mywilcoxauc_DEG_names <- vector('list', length(condition))
+  
+  
+  for (i in 1:length(condition)) {
+    
+    seurat.object.subset <- subset(seurat.object, subset = Condition == "Control" | Condition == condition[i])
+    
+    seurat.object.DEG <- wilcoxauc(seurat.object.subset, 'Condition')
+    
+    mywilcoxauc_DEG[[i]] <- local({
+      i <- i
+      seurat.object.DEG
+    })
+    mywilcoxauc_DEG_names[[i]] <- local({
+      i <- i
+      paste(condition_text, clusters_text[i], sep = "_")
+    })
+  }
+  names(mywilcoxauc_DEG) <- mywilcoxauc_DEG_names 
+  
+  # All cells
+  
+  write.xlsx(mywilcoxauc_DEG, "./Tables/GSEA_wilcoxauc_condition.xlsx", rowNames = T)
+  
+  mywilcoxauc_DEG_stacked <- list.stack(mywilcoxauc_DEG)
+  
+  dplyr::count(mywilcoxauc_DEG_stacked, group)
+  
+  myfgsea <- vector('list', length(condition))
+  myfgsea_names <- vector('list', length(condition))
+  myranks <- vector('list', length(condition))
+  
+  for (i in 1:length(condition)) {
+    
+    condition.genes<- mywilcoxauc_DEG_stacked %>%
+      dplyr::filter(group == condition[i]) %>%
+      arrange(desc(auc)) %>% 
+      dplyr::select(feature, auc)
+    
+    ranks<- deframe(condition.genes)
+    
+    myfgsea[[i]] <- local({
+      i <- i
+      fgseaRes<- fgsea(fgsea_sets, stats = ranks)
+      
+    })
+    myfgsea_names[[i]] <- local({
+      i <- i
+      paste(condition_text, clusters_text[i], sep = "")
+    })
+    
+    ranks<- as.data.frame(ranks)
+    ranks$genes <- rownames(ranks)
+    myranks[[i]] <- local({
+      i <- i
+      ranks
+    })
+  }
+  
+  names(myranks) <- myfgsea_names 
+  names(myfgsea) <- myfgsea_names 
+  
+  # Filtering for Gene Set size > 50 and padj < 0.05
+  
+  myfgsea.filter <- vector('list', length(condition))
+  
+  for (i in 1:length(condition)) {
+    myfgsea.filter[[i]] <- local({
+      i <- i
+      myfgsea[[i]][size > 50 & padj < 0.05]
+    })
+  }
+  
+  names(myfgsea.filter) <- myfgsea_names 
+  
+  write.xlsx(myfgsea.filter, file = "./Tables/fgsea_Condition.xlsx")
+  write.xlsx(myranks, file = "./Tables/ranks_Condition.xlsx")
+}
+
+##########################################################################
+
+
 
 DEG_Analysis_per_ConditionvCtl <- function(seurat.object, control.name = "Control", conditions){
   
