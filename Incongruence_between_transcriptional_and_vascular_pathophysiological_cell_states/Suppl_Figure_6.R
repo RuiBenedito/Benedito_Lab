@@ -1,3 +1,11 @@
+########################################
+# This file contains the plots produced in the Supplementary Figure 6
+# 
+# Author:
+#   Alvaro Regano aregano@cnic.es
+#
+########################################
+
 # Create Plot directory
 
 dir.create("Plots/")

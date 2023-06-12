@@ -1,3 +1,12 @@
+########################################
+# This file contains the pre-processing steps for assembling the Liver non ECs scRNASeq dataset
+# 
+# Author:
+#   Alvaro Regano aregano@cnic.es
+#
+########################################
+
+
 library(Seurat)
 library(ggplot2)
 library(DoubletFinder)
